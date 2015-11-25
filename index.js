@@ -1,12 +1,14 @@
 var awsIot = require('aws-iot-device-sdk');
 
-var thingShadows = awsIot.thingShadow({
-   keyPath: '/home/root/awsCerts/private.pem.key',
-  certPath: '/home/root/awsCerts/certificate.pem.crt',
-    caPath: '/home/root/awsCerts/root-CA.crt',
-  clientId: 'Robot',
-    region: 'us-east-1'
-});
+const	certPath = "BLABLA"
+
+// var thingShadows = awsIot.thingShadow({
+//    keyPath: certPath + 'private.pem.key',
+//   certPath: certPath + 'certificate.pem.crt',
+//     caPath: certPath + 'root-CA.crt',
+//   clientId: 'Robot',
+//     region: 'us-east-1'
+// });
 
 var clientTokenUpdate;
 
@@ -16,58 +18,57 @@ var	board = new five.Board({
 	io: new Edison()
 });
 
-const	motorNorth = 2;
-const	motorDirNorth = 6;
-const	motorSouth = 3;
-const	motorDirSouth = 7;
-const	motorEast = 4;
-const	motorDirEast = 8;
-const	motorWest = 5;
-const	motorDirWest = 9;
+const	motorNorth = 3;
+const	motorDirNorth = 2;
+const	motorSouth = 5;
+const	motorDirSouth = 4;
+const	motorEast = 6;
+const	motorDirEast = 7;
+const	motorWest = 9;
+const	motorDirWest = 8;
 
 var north;
 var south;
 var east;
 var west;
 
-thingShadows.on('connect', function() {
-	// stuff
-    });
+var trySpeed = 0;
 
-thingShadows.on('status', 
-    function(thingName, stat, clientToken, stateObject) {
-       console.log('received '+stat+' on '+thingName+': '+
-                   JSON.stringify(stateObject));
-    });
+// thingShadows.on('connect', function() {
+// 	// stuff
+//     });
 
-thingShadows.on('delta', 
-    function(thingName, stateObject) {
-       console.log('received delta '+' on '+thingName+': '+
-                   JSON.stringify(stateObject));
-       // phone control logic
-    });
+// thingShadows.on('status', 
+//     function(thingName, stat, clientToken, stateObject) {
+//        console.log('received '+stat+' on '+thingName+': '+
+//                    JSON.stringify(stateObject));
+//     });
 
-thingShadows.on('timeout',
-    function(thingName, clientToken) {
-       console.log('received timeout '+' on '+operation+': '+
-                   clientToken);
-    });
+// thingShadows.on('delta', 
+//     function(thingName, stateObject) {
+//        console.log('received delta '+' on '+thingName+': '+
+//                    JSON.stringify(stateObject));
+//        // phone control logic
+//     });
 
-board.on("ready", function() {
-	var led = new five.Led(13);
-	led.blink();
+// thingShadows.on('timeout',
+//     function(thingName, clientToken) {
+//        console.log('received timeout '+' on '+operation+': '+
+//                    clientToken);
+//     });
 
-	north = new five.Motor([motorNorth, motorDirNorth]);
-	south = new five.Motor([motorSouth, motorDirSouth]);
-	east  = new five.Motor([motorEast, motorDirEast]);
-	west  = new five.Motor([motorWest, motorDirWest]);
-});
-
-function	callMotor(sideA, sideB, speed)
+function	startMotor(sideA, sideB, speed)
 {
 	// Forward : sideA = West and sideB = East
 	sideA.forward(speed);
 	sideB.reverse(speed);
+}
+
+function	stopMotor(sideA, sideB)
+{
+	// Forward : sideA = West and sideB = East
+	sideA.stop();
+	sideB.stop();
 }
 
 function	turnRight(speed)
@@ -85,3 +86,55 @@ function	turnLeft(speed)
 	east.reverse(speed);
 	west.reverse(speed);
 }
+
+board.on("ready", function() {
+	var led = new five.Led(13);
+	led.blink();
+
+	north = new five.Motor({
+		pins :{
+		pwm : motorNorth,
+		dir : motorDirNorth
+	}
+	});
+	south = new five.Motor({
+		pins :{
+		pwm : motorSouth,
+		dir : motorDirSouth
+	}
+	});
+	east  = new five.Motor({
+		pins :{
+		pwm : motorEast, 
+		dir : motorDirEast
+	}
+	});
+	west  = new five.Motor({
+		pins :{
+		pwm : motorWest, 
+		dir : motorDirWest
+	}
+	});
+
+	// DEBUG
+	button = new five.Button(12);
+	board.repl.inject({
+    	button: button
+	});
+	button.on("down", function() {
+		trySpeed ^= 1;
+		(trySpeed) ? startMotor(north, south, 100 * trySpeed ) : stopMotor(north, south);
+		console.log("down");
+	}); 
+	  button.on("hold", function() {
+    console.log("hold");
+  });
+
+  // "up" the button is released
+  button.on("up", function() {
+    console.log("up");
+  });
+});
+
+
+
